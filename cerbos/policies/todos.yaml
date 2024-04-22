@@ -1,0 +1,21 @@
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  resource: todo
+  version: default
+  rules:
+    - actions:
+        - create
+        - read
+      effect: EFFECT_ALLOW
+      roles:
+        - user1
+        - user2
+        - user3
+        - admin
+    - actions:
+        - edit
+        - delete
+        - read
+      effect: EFFECT_ALLOW
+      roles:
+        - admin

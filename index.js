@@ -1,168 +1,152 @@
-var todoList = []
+var todoList = [];
 var comdoList = [];
 var remList = [];
-var addButton = document.getElementById("add-button")
-var todoInput = document.getElementById("todo-input")
-var deleteAllButton = document.getElementById("delete-all")
+var addButton = document.getElementById("add-button");
+var todoInput = document.getElementById("todo-input");
+var deleteAllButton = document.getElementById("delete-all");
 var allTodos = document.getElementById("all-todos");
-var deleteSButton = document.getElementById("delete-selected")
+var deleteSButton = document.getElementById("delete-selected");
+var currentUser = 'user'; // Default user role, can be 'admin', 'user1', 'user2', 'user3'
 
+// Function to perform authorization check using Cerbos
+async function isAuthorized(action) {
+    try {
+        const response = await fetch('/api/cerbos/decide', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                subject: currentUser,
+                resource: 'todo',
+                action
+            })
+        });
+        const { allowed } = await response.json();
+        return allowed;
+    } catch (error) {
+        console.error('Error checking authorization:', error);
+        return false; // Default to false if there's an error
+    }
+}
 
-//event listners for add and delete
-addButton.addEventListener("click", add)
-deleteAllButton.addEventListener("click", deleteAll)
-deleteSButton.addEventListener("click", deleteS)
-
-
-//event listeners for filtersk
-document.addEventListener('click', (e) => {
-    if (e.target.className.split(' ')[0] == 'complete' || e.target.className.split(' ')[0] == 'ci') {
-        completeTodo(e);
-    }
-    if (e.target.className.split(' ')[0] == 'delete' || e.target.className.split(' ')[0] == 'di') {
-        deleteTodo(e)
-    }
-    if (e.target.id == "all") {
-        viewAll();
-    }
-    if (e.target.id == "rem") {
-        viewRemaining();
-    }
-    if (e.target.id == "com") {
-        viewCompleted();
+// Event listeners for add and delete buttons
+addButton.addEventListener("click", async () => {
+    const value = todoInput.value.trim();
+    if (value === '') {
+        alert("😮 Task cannot be empty");
+        return;
     }
 
-})
-//event listner for enter key
-todoInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        add();
+    // Check if user is authorized to create a new todo
+    const allowed = await isAuthorized('create');
+    if (allowed) {
+        todoList.push({
+            task: value,
+            id: Date.now().toString(),
+            complete: false,
+        });
+        todoInput.value = "";
+        update();
+        addinmain(todoList);
+    } else {
+        alert('You are not authorized to add a new todo.');
     }
 });
 
-
-//updates the all the remaining, completed and main list
-function update() {
-    comdoList = todoList.filter((ele) => {
-        return ele.complete
-
-    })
-    remList = todoList.filter((ele) => {
-        return !ele.complete
-    })
-    document.getElementById("r-count").innerText = todoList.length.toString();
-    document.getElementById("c-count").innerText = comdoList.length.toString();
-
-}
-
-//adds the task in main list
-
-function add() {
-    var value = todoInput.value;
-    if (value === '') {
-        alert("😮 Task cannot be empty")
-        return;
+deleteAllButton.addEventListener("click", async () => {
+    // Check if user is authorized to delete all todos
+    const allowed = await isAuthorized('delete');
+    if (allowed) {
+        todoList = [];
+        update();
+        addinmain(todoList);
+    } else {
+        alert('You are not authorized to delete all todos.');
     }
-    todoList.push({
-        task: value,
-        id: Date.now().toString(),
-        complete: false,
-    });
+});
 
-    todoInput.value = "";
-    update();
-    addinmain(todoList);
+deleteSButton.addEventListener("click", async () => {
+    // Check if user is authorized to delete completed todos
+    const allowed = await isAuthorized('delete');
+    if (allowed) {
+        todoList = todoList.filter((todo) => !todo.complete);
+        update();
+        addinmain(todoList);
+    } else {
+        alert('You are not authorized to delete completed todos.');
+    }
+});
+
+// Function to update the remaining and completed todo lists
+function update() {
+    comdoList = todoList.filter((todo) => todo.complete);
+    remList = todoList.filter((todo) => !todo.complete);
+    document.getElementById("r-count").innerText = remList.length.toString();
+    document.getElementById("c-count").innerText = comdoList.length.toString();
 }
 
-
-//renders the main list and views on the main content
-
+// Function to render the main todo list
 function addinmain(todoList) {
-    allTodos.innerHTML = ""
-    todoList.forEach(element => {
-        var x = `<li id=${element.id} class="todo-item">
-    <p id="task"> ${element.complete ? `<strike>${element.task}</strike>` : element.task} </p>
-    <div class="todo-actions">
+    allTodos.innerHTML = "";
+    todoList.forEach((element) => {
+        const x = `<li id=${element.id} class="todo-item">
+            <p id="task">${element.complete ? `<strike>${element.task}</strike>` : element.task}</p>
+            <div class="todo-actions">
                 <button class="complete btn btn-success">
-                    <i class=" ci bx bx-check bx-sm"></i>
+                    <i class="ci bx bx-check bx-sm"></i>
                 </button>
-
-                <button class="delete btn btn-error" >
+                <button class="delete btn btn-error">
                     <i class="di bx bx-trash bx-sm"></i>
                 </button>
             </div>
-        </li>`
-        allTodos.innerHTML += x
+        </li>`;
+        allTodos.innerHTML += x;
     });
 }
 
-
-//deletes and indiviual task and update all the list
-function deleteTodo(e) {
-    var deleted = e.target.parentElement.parentElement.getAttribute('id');
-    todoList = todoList.filter((ele) => {
-        return ele.id != deleted
-    })
-
-    update();
-    addinmain(todoList);
-
-}
-
-//completes indiviaula task and updates all the list
-function completeTodo(e) {
-    var completed = e.target.parentElement.parentElement.getAttribute('id');
-    todoList.forEach((obj) => {
-        if (obj.id == completed) {
-            if (obj.complete == false) {
-                obj.complete = true
-                e.target.parentElement.parentElement.querySelector("#task").classList.add("line");
-            } else {
-                obj.complete = false
-
-                e.target.parentElement.parentElement.querySelector("#task").classList.remove("line");
-            }
+// Event listener for complete and delete actions
+document.addEventListener('click', async (e) => {
+    if (e.target.classList.contains('complete') || e.target.classList.contains('ci')) {
+        const todoId = e.target.parentElement.parentElement.getAttribute('id');
+        // Check if user is authorized to complete a todo
+        const allowed = await isAuthorized('edit');
+        if (allowed) {
+            completeTodoById(todoId);
+        } else {
+            alert('You are not authorized to complete this todo.');
         }
-    })
+    }
 
+    if (e.target.classList.contains('delete') || e.target.classList.contains('di')) {
+        const todoId = e.target.parentElement.parentElement.getAttribute('id');
+        // Check if user is authorized to delete a todo
+        const allowed = await isAuthorized('delete');
+        if (allowed) {
+            deleteTodoById(todoId);
+        } else {
+            alert('You are not authorized to delete this todo.');
+        }
+    }
+});
+
+// Function to complete a todo by ID
+function completeTodoById(todoId) {
+    const todo = todoList.find((todo) => todo.id === todoId);
+    if (todo) {
+        todo.complete = !todo.complete;
+        update();
+        addinmain(todoList);
+    }
+}
+
+// Function to delete a todo by ID
+function deleteTodoById(todoId) {
+    todoList = todoList.filter((todo) => todo.id !== todoId);
     update();
     addinmain(todoList);
 }
 
-
-//deletes all the tasks
-function deleteAll(todo) {
-
-    todoList = []
-
-    update();
-    addinmain(todoList);
-
-}
-
-//deletes only completed task
-function deleteS(todo) {
-
-    todoList = todoList.filter((ele) => {
-        return !ele.complete;
-    })
-
-
-    update();
-    addinmain(todoList);
-
-}
-
-
-// functions for filters
-function viewCompleted() {
-    addinmain(comdoList);
-}
-
-function viewRemaining() {
-
-    addinmain(remList);
-}
-function viewAll() {
-    addinmain(todoList);
-}
+// Initial update and rendering of todo list
+update();
+addinmain(todoList);

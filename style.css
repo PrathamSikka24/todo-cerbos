@@ -231,6 +231,17 @@ dropdown*/
     cursor: pointer;
     border-radius: 5px;
   }
+  .user-dropdown {
+    margin-bottom: 10px;
+}
+
+.dropdown-select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+}
   
   .dropdown {
     position: relative;

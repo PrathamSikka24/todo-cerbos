@@ -1,0 +1,16 @@
+apiVersion: api.cerbos.dev/v1
+derivedRoles:
+  name: todoUserRoles
+  definitions:
+    - name: user1
+      parentRoles:
+        - user
+    - name: user2
+      parentRoles:
+        - user
+    - name: user3
+      parentRoles:
+        - user
+    - name: admin
+      parentRoles:
+        - admin
