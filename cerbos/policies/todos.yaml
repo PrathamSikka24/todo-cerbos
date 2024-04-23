@@ -3,19 +3,11 @@ resourcePolicy:
   resource: todo
   version: default
   rules:
-    - actions:
-        - create
-        - read
+    - actions: ["read", "create"]
       effect: EFFECT_ALLOW
       roles:
-        - user1
-        - user2
-        - user3
-        - admin
-    - actions:
-        - edit
-        - delete
-        - read
+        - user
+    - actions: ["*"]
       effect: EFFECT_ALLOW
       roles:
         - admin

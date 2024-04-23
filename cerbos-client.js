@@ -1,5 +1,3 @@
-import { CerbosClient } from '@cerbos/http';
+import { GRPC } from "@cerbos/grpc";
 
-const cerbosClient = new CerbosClient({
-  baseUrl: 'http://localhost:3592', 
-});
+export const cerbos = new GRPC("localhost:3593", { tls: false });
